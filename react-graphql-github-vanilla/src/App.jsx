@@ -10,14 +10,47 @@ const axiosGitHubGraphQL = axios.create({
   },
 });
 
+const ADD_STAR = `
+  mutation($repositoryId: ID!) {
+    addStar(input: {starrableId: $repositoryId}) {
+      starrable {
+        id
+        stargazers {
+          totalCount
+        }
+        viewerHasStarred
+      }
+    }
+  }
+`;
+
+const REMOVE_STAR = `
+  mutation($repositoryId: ID!) {
+    removeStar(input: {starrableId: $repositoryId}) {
+      starrable {
+        id
+        stargazers {
+          totalCount
+        }
+        viewerHasStarred
+      }
+    }
+  }
+`;
+
 const GET_ISSUES_OF_REPOSITORY = `
   query($organization: String!, $repository: String!, $cursor: String) {
     organization(login: $organization) {
       name
       url
       repository(name: $repository) {
+        id
         name
         url
+        stargazers {
+          totalCount
+        }
+        viewerHasStarred
         issues(first: 5, states: [OPEN], after: $cursor) {
           edges {
             node {
@@ -71,11 +104,23 @@ class App extends React.Component {
     this.onFetchFromGitHub(path);
   };
 
+  addStarToRepository = repositoryId =>
+    axiosGitHubGraphQL.post('', {
+      query: ADD_STAR,
+      variables: { repositoryId },
+    });
+
+  removeStarFromRepository = repositoryId =>
+    axiosGitHubGraphQL.post('', {
+      query: REMOVE_STAR,
+      variables: { repositoryId },
+    });
+
   onFetchFromGitHub = async (path, cursor) => {
-    const [organization, repository] = path.split('/');
+    const [org, repository] = path.split('/');
     const response = await axiosGitHubGraphQL.post('', {
       query: GET_ISSUES_OF_REPOSITORY,
-      variables: { organization, repository, cursor },
+      variables: { organization: org, repository, cursor },
     });
 
     const { data, errors } = response.data;
@@ -88,7 +133,8 @@ class App extends React.Component {
       return;
     }
 
-    const { edges: oldIssues } = this.state.organization.repository.issues;
+    const { organization } = this.state;
+    const { edges: oldIssues } = organization.repository.issues;
     const { edges: newIssues } = data.organization.repository.issues;
     const updatedIssues = [...oldIssues, ...newIssues];
     this.setState({
@@ -112,6 +158,57 @@ class App extends React.Component {
     this.onFetchFromGitHub(path, endCursor);
   };
 
+  resolveAddStarMutation = result => {
+    const { organization } = this.state;
+    const { viewerHasStarred } = result.data.data.addStar.starrable;
+    const { totalCount } = organization.repository.stargazers;
+
+    this.setState(previousState => ({
+      ...previousState,
+      organization: {
+        ...previousState.organization,
+        repository: {
+          ...previousState.organization.repository,
+          viewerHasStarred,
+          stargazers: {
+            totalCount: totalCount + 1,
+          },
+        },
+      },
+    }));
+  };
+
+  resolveRemoveStarMutation = result => {
+    const { organization } = this.state;
+    const { viewerHasStarred } = result.data.data.removeStar.starrable;
+    const { totalCount } = organization.repository.stargazers;
+
+    this.setState(previousState => ({
+      ...previousState,
+      organization: {
+        ...previousState.organization,
+        repository: {
+          ...previousState.organization.repository,
+          viewerHasStarred,
+          stargazers: {
+            totalCount: totalCount - 1,
+          },
+        },
+      },
+    }));
+  };
+
+  onStarRepository = async (repositoryId, viewerHasStarred) => {
+    let result;
+    if (viewerHasStarred) {
+      result = await this.removeStarFromRepository(repositoryId);
+      this.resolveRemoveStarMutation(result);
+    } else {
+      result = await this.addStarToRepository(repositoryId);
+      this.resolveAddStarMutation(result);
+    }
+  };
+
   showResult = (organization, errors) => {
     if (errors) {
       return (
@@ -127,6 +224,7 @@ class App extends React.Component {
         organization={organization}
         errors={errors}
         onFetchMoreIssues={this.onFetchMoreIssues}
+        onStarRepository={this.onStarRepository}
       />
     ) : (
       <p>No information yet...</p>
