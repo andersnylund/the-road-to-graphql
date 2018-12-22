@@ -1,4 +1,6 @@
 import React from 'react';
+import { Header } from 'semantic-ui-react';
+
 import Link from './Link';
 
 const RepositoryItem = ({
@@ -13,21 +15,18 @@ const RepositoryItem = ({
   viewerHasStarred,
 }) => (
   <div>
-    <div className="RepositoryItem-title">
-      <h2>
+    <div>
+      <Header as="h2">
         <Link href={url}>{name}</Link>
-      </h2>
-      <div className="RepositoryItem-title-action">
+      </Header>
+      <div>
         {`${stargazers.totalCount} `}
         Stars
       </div>
     </div>
-    <div className="RepositoryItem-description">
-      <div
-        className="RepositoryItem-description-info"
-        dangerouslySetInnerHTML={{ __html: descriptionHTML }}
-      />
-      <div className="RepositoryItem-description-details">
+    <div>
+      <div dangerouslySetInnerHTML={{ __html: descriptionHTML }} />
+      <div>
         <div>
           {primaryLanguage && (
             <span>
