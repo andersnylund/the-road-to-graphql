@@ -4,6 +4,7 @@ import { Query } from 'react-apollo';
 
 import RepositoryList from './RepositoryList';
 import Loading from './Loading';
+import ErrorMessage from './ErrorMessage';
 
 const GET_CURRENT_USER = gql`
   {
@@ -44,7 +45,11 @@ const GET_CURRENT_USER = gql`
 
 const Profile = () => (
   <Query query={GET_CURRENT_USER}>
-    {({ data, loading }) => {
+    {({ data, loading, error }) => {
+      if (error) {
+        return <ErrorMessage error={error} />;
+      }
+
       const { viewer } = data;
 
       if (loading || !viewer) {
