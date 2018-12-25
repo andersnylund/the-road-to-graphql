@@ -5,34 +5,7 @@ import gql from 'graphql-tag';
 
 import Link from './Link';
 import Button from './Button';
-
-const STAR_REPOSITORY = gql`
-  mutation($id: ID!) {
-    addStar(input: { starrableId: $id }) {
-      starrable {
-        id
-        viewerHasStarred
-        stargazers {
-          totalCount
-        }
-      }
-    }
-  }
-`;
-
-const REMOVE_STAR_FROM_REPOSITORY = gql`
-  mutation($id: ID!) {
-    removeStar(input: { starrableId: $id }) {
-      starrable {
-        id
-        viewerHasStarred
-        stargazers {
-          totalCount
-        }
-      }
-    }
-  }
-`;
+import StarButton from './StarButton';
 
 const CHANGE_SUBSCRIPTION_OF_REPOSITORY = gql`
   mutation($id: ID!, $subscriptionState: SubscriptionState!) {
@@ -64,30 +37,11 @@ const RepositoryItem = ({
       <Header as="h2">
         <Link href={url}>{name}</Link>
       </Header>
-      <div>
-        {!viewerHasStarred ? (
-          <Mutation mutation={STAR_REPOSITORY} variables={{ id }}>
-            {(addStar, { data, loading, error }) => (
-              <Button onClick={addStar}>
-                {`${stargazers.totalCount} `}
-                Star
-              </Button>
-            )}
-          </Mutation>
-        ) : (
-          <Mutation
-            mutation={REMOVE_STAR_FROM_REPOSITORY}
-            variables={{ id }}
-          >
-            {(removeStar, { data, loading, error }) => (
-              <Button onClick={removeStar}>
-                {`${stargazers.totalCount} `}
-                Unstar
-              </Button>
-            )}
-          </Mutation>
-        )}
-      </div>
+      <StarButton
+        id={id}
+        stargazers={stargazers}
+        viewerHasStarred={viewerHasStarred}
+      />
       <div>
         {viewerSubscription === 'SUBSCRIBED' ? (
           <Mutation
