@@ -30,7 +30,7 @@ export const REPOSITORY_FRAGMENT = gql`
   }
 `;
 
-const STAR_REPOSITORY = gql`
+const ADD_STAR = gql`
   mutation($id: ID!) {
     addStar(input: { starrableId: $id }) {
       starrable {
@@ -44,7 +44,7 @@ const STAR_REPOSITORY = gql`
   }
 `;
 
-const REMOVE_STAR_FROM_REPOSITORY = gql`
+const REMOVE_STAR = gql`
   mutation($id: ID!) {
     removeStar(input: { starrableId: $id }) {
       starrable {
@@ -132,7 +132,24 @@ const RepositoryItem = ({
       </Header>
       <div>
         {!viewerHasStarred ? (
-          <Mutation mutation={STAR_REPOSITORY} variables={{ id }}>
+          <Mutation
+            mutation={ADD_STAR}
+            variables={{ id }}
+            optimisticResponse={{
+              addStar: {
+                __typename: 'AddStarPayload',
+                starrable: {
+                  __typename: 'Repository',
+                  id,
+                  viewerHasStarred: true,
+                  stargazers: {
+                    __typename: 'StargazerConnection',
+                    totalCount: stargazers.totalCount + 1,
+                  },
+                },
+              },
+            }}
+          >
             {(addStar, { data, loading, error }) => (
               <Button onClick={addStar}>
                 {`${stargazers.totalCount} `}
@@ -142,8 +159,22 @@ const RepositoryItem = ({
           </Mutation>
         ) : (
           <Mutation
-            mutation={REMOVE_STAR_FROM_REPOSITORY}
+            mutation={REMOVE_STAR}
             variables={{ id }}
+            optimisticResponse={{
+              removeStar: {
+                __typename: 'RemoveStarPayload',
+                starrable: {
+                  __typename: 'Repository',
+                  id,
+                  viewerHasStarred: false,
+                  stargazers: {
+                    __typename: 'StargazerConnection',
+                    totalCount: stargazers.totalCount - 1,
+                  },
+                },
+              },
+            }}
           >
             {(removeStar, { data, loading, error }) => (
               <Button onClick={removeStar}>
