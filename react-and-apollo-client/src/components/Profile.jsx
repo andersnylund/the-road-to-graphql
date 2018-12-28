@@ -5,6 +5,7 @@ import { graphql } from 'react-apollo';
 import RepositoryList from './RepositoryList';
 import Loading from './Loading';
 import ErrorMessage from './ErrorMessage';
+import { REPOSITORY_FRAGMENT } from './RepositoryItem';
 
 const GET_CURRENT_USER = gql`
   {
@@ -15,25 +16,7 @@ const GET_CURRENT_USER = gql`
       ) {
         edges {
           node {
-            id
-            name
-            url
-            descriptionHTML
-            primaryLanguage {
-              name
-            }
-            owner {
-              login
-              url
-            }
-            stargazers {
-              totalCount
-            }
-            viewerHasStarred
-            watchers {
-              totalCount
-            }
-            viewerSubscription
+            ...repository
           }
         }
       }
@@ -41,6 +24,8 @@ const GET_CURRENT_USER = gql`
       name
     }
   }
+
+  ${REPOSITORY_FRAGMENT}
 `;
 
 const Profile = ({ data, loading, error }) => {
