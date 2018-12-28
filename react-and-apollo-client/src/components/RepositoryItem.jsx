@@ -59,9 +59,9 @@ const REMOVE_STAR_FROM_REPOSITORY = gql`
 `;
 
 const CHANGE_SUBSCRIPTION_OF_REPOSITORY = gql`
-  mutation($id: ID!, $subscriptionState: SubscriptionState!) {
+  mutation($id: ID!, $viewerSubscription: SubscriptionState!) {
     updateSubscription(
-      input: { subscribableId: $id, state: $subscriptionState }
+      input: { subscribableId: $id, state: $viewerSubscription }
     ) {
       subscribable {
         id
@@ -71,42 +71,20 @@ const CHANGE_SUBSCRIPTION_OF_REPOSITORY = gql`
   }
 `;
 
-const updateAddSubscribtion = (
-  client,
-  {
-    data: {
-      updateSubscription: {
-        subscribable: { id },
-      },
-    },
-  }
-) => {
-  const repository = client.readFragment({
-    id: `Repository:${id}`,
-    fragment: REPOSITORY_FRAGMENT,
-  });
-
-  const totalCount = repository.watchers.totalCount + 1;
-
-  client.writeFragment({
-    id: `Repository:${id}`,
-    fragment: REPOSITORY_FRAGMENT,
-    data: {
-      ...repository,
-      watchers: {
-        ...repository.watchers,
-        totalCount,
-      },
-    },
-  });
+const VIEWER_SUBSCRIPTIONS = {
+  SUBSCRIBED: 'SUBSCRIBED',
+  UNSUBSCRIBED: 'UNSUBSCRIBED',
 };
 
-const updateRemoveSubscribtion = (
+const isWatch = viewerSubscription =>
+  viewerSubscription === VIEWER_SUBSCRIPTIONS.SUBSCRIBED;
+
+const updateWatch = (
   client,
   {
     data: {
       updateSubscription: {
-        subscribable: { id },
+        subscribable: { id, viewerSubscription },
       },
     },
   }
@@ -116,7 +94,11 @@ const updateRemoveSubscribtion = (
     fragment: REPOSITORY_FRAGMENT,
   });
 
-  const totalCount = repository.watchers.totalCount - 1;
+  let { totalCount } = repository.watchers;
+  totalCount =
+    viewerSubscription === VIEWER_SUBSCRIPTIONS.SUBSCRIBED
+      ? totalCount + 1
+      : totalCount - 1;
 
   client.writeFragment({
     id: `Repository:${id}`,
@@ -173,31 +155,36 @@ const RepositoryItem = ({
         )}
       </div>
       <div>
-        {viewerSubscription === 'SUBSCRIBED' ? (
-          <Mutation
-            mutation={CHANGE_SUBSCRIPTION_OF_REPOSITORY}
-            variables={{ id, subscriptionState: 'UNSUBSCRIBED' }}
-            update={updateRemoveSubscribtion}
-          >
-            {(changeSubscription, { data, loading, error }) => (
-              <Button onClick={changeSubscription}>
-                {`${watchers.totalCount} Unwatch`}
-              </Button>
-            )}
-          </Mutation>
-        ) : (
-          <Mutation
-            mutation={CHANGE_SUBSCRIPTION_OF_REPOSITORY}
-            variables={{ id, subscriptionState: 'SUBSCRIBED' }}
-            update={updateAddSubscribtion}
-          >
-            {(changeSubscription, { data, loading, error }) => (
-              <Button onClick={changeSubscription}>
-                {`${watchers.totalCount} Watch`}
-              </Button>
-            )}
-          </Mutation>
-        )}
+        <Mutation
+          mutation={CHANGE_SUBSCRIPTION_OF_REPOSITORY}
+          variables={{
+            id,
+            viewerSubscription: isWatch(viewerSubscription)
+              ? VIEWER_SUBSCRIPTIONS.UNSUBSCRIBED
+              : VIEWER_SUBSCRIPTIONS.SUBSCRIBED,
+          }}
+          optimisticResponse={{
+            updateSubscription: {
+              __typename: 'Mutation',
+              subscribable: {
+                __typename: 'Repository',
+                id,
+                viewerSubscription: isWatch(viewerSubscription)
+                  ? VIEWER_SUBSCRIPTIONS.UNSUBSCRIBED
+                  : VIEWER_SUBSCRIPTIONS.SUBSCRIBED,
+              },
+            },
+          }}
+          update={updateWatch}
+        >
+          {(updateSubscription, { data, loading, error }) => (
+            <Button onClick={updateSubscription}>
+              {`${watchers.totalCount} ${
+                isWatch(viewerSubscription) ? 'Unwatch' : 'Watch'
+              }`}
+            </Button>
+          )}
+        </Mutation>
       </div>
     </div>
     <div>
