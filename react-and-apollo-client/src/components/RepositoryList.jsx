@@ -1,9 +1,8 @@
 import React from 'react';
 import { Container, List } from 'semantic-ui-react';
 
+import FetchMore from './FetchMore';
 import RepositoryItem from './RepositoryItem';
-import Button from './Button';
-import Loading from './Loading';
 
 const updateQuery = (previousResult, { fetchMoreResult }) => {
   if (!fetchMoreResult) {
@@ -35,24 +34,17 @@ const RepositoryList = ({ repositories, loading, fetchMore }) => (
         </List.Item>
       ))}
     </List>
-    {loading ? (
-      <Loading />
-    ) : (
-      repositories.pageInfo.hasNextPage && (
-        <Button
-          onClick={() =>
-            fetchMore({
-              variables: {
-                cursor: repositories.pageInfo.endCursor,
-              },
-              updateQuery,
-            })
-          }
-        >
-          More repositories
-        </Button>
-      )
-    )}
+    <FetchMore
+      loading={loading}
+      hasNextPage={repositories.pageInfo.hasNextPage}
+      variables={{
+        cursor: repositories.pageInfo.endCursor,
+      }}
+      updateQuery={updateQuery}
+      fetchMore={fetchMore}
+    >
+      Repositories
+    </FetchMore>
   </Container>
 );
 
