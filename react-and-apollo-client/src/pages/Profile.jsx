@@ -2,12 +2,12 @@ import React from 'react';
 import gql from 'graphql-tag';
 import { Query } from 'react-apollo';
 
-import RepositoryList from './RepositoryList';
-import Loading from './Loading';
-import ErrorMessage from './ErrorMessage';
-import { REPOSITORY_FRAGMENT } from './RepositoryItem';
+import RepositoryList from '../components/RepositoryList';
+import Loading from '../components/Loading';
+import ErrorMessage from '../components/ErrorMessage';
+import { REPOSITORY_FRAGMENT } from '../components/RepositoryItem';
 
-const GET_CURRENT_USER = gql`
+const GET_REPOSITORIES_OF_USER = gql`
   query($cursor: String) {
     viewer {
       repositories(
@@ -34,7 +34,7 @@ const GET_CURRENT_USER = gql`
 `;
 
 const Profile = () => (
-  <Query query={GET_CURRENT_USER} notifyOnNetworkStatusChange>
+  <Query query={GET_REPOSITORIES_OF_USER} notifyOnNetworkStatusChange>
     {({ data, loading, error, fetchMore }) => {
       if (error) {
         return <ErrorMessage error={error} />;
