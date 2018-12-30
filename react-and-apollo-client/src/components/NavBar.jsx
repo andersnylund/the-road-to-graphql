@@ -1,17 +1,25 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 import { Menu } from 'semantic-ui-react';
 
 import * as routes from '../constants/routes';
+import OrganizationSearch from './OrganizationSearch';
 
 class NavBar extends React.Component {
-  state = {};
+  state = {
+    activeItem: 'organization',
+  };
 
   handleItemClick = (e, { name }) =>
     this.setState({ activeItem: name });
 
   render() {
     const { activeItem } = this.state;
+    const {
+      location: { pathname },
+      organizationName,
+      onOrganizationSearch,
+    } = this.props;
 
     return (
       <Menu>
@@ -33,9 +41,15 @@ class NavBar extends React.Component {
         >
           Profile
         </Menu.Item>
+        {pathname === routes.ORGANIZATION && (
+          <OrganizationSearch
+            organizationName={organizationName}
+            onOrganizationSearch={onOrganizationSearch}
+          />
+        )}
       </Menu>
     );
   }
 }
 
-export default NavBar;
+export default withRouter(NavBar);

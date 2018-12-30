@@ -7,24 +7,43 @@ import NavBar from './components/NavBar';
 
 import * as routes from './constants/routes';
 
-const App = () => (
-  <Router>
-    <Fragment>
-      <NavBar />
-      <Route
-        exact
-        path={routes.ORGANIZATION}
-        component={() => (
-          <Organization organizationName="the-road-to-learn-react" />
-        )}
-      />
-      <Route
-        exact
-        path={routes.PROFILE}
-        component={() => <Profile />}
-      />
-    </Fragment>
-  </Router>
-);
+class App extends React.Component {
+  state = {
+    organizationName: 'the-road-to-learn-react',
+  };
+
+  onOrganizationSearch = value => {
+    this.setState({
+      organizationName: value,
+    });
+  };
+
+  render() {
+    const { organizationName } = this.state;
+
+    return (
+      <Router>
+        <Fragment>
+          <NavBar
+            organizationName={organizationName}
+            onOrganizationSearch={this.onOrganizationSearch}
+          />
+          <Route
+            exact
+            path={routes.ORGANIZATION}
+            component={() => (
+              <Organization organizationName={organizationName} />
+            )}
+          />
+          <Route
+            exact
+            path={routes.PROFILE}
+            component={() => <Profile />}
+          />
+        </Fragment>
+      </Router>
+    );
+  }
+}
 
 export default App;
