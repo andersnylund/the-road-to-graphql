@@ -14,7 +14,9 @@ const App = () => (
       <Route
         exact
         path={routes.ORGANIZATION}
-        component={() => <Organization />}
+        component={() => (
+          <Organization organizationName="the-road-to-learn-react" />
+        )}
       />
       <Route
         exact
