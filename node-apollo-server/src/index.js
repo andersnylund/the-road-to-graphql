@@ -9,21 +9,36 @@ app.use(helmet());
 
 const schema = gql`
   type Query {
+    users: [User!]
+    user(id: ID!): User
     me: User
   }
 
   type User {
+    id: ID!
     username: String!
-    age: Int!
+    age: Int
   }
 `;
 
+let users = {
+  1: {
+    id: '1',
+    username: 'Anders Nylund',
+  },
+  2: {
+    id: '2',
+    username: 'John Doe',
+  },
+};
+
+const me = users[1];
+
 const resolvers = {
   Query: {
-    me: () => ({
-      username: 'Anders Nylund',
-      age: 24,
-    }),
+    users: () => Object.values(users),
+    me: () => me,
+    user: (parent, { id }) => users[id],
   },
 };
 
