@@ -1,11 +1,12 @@
 import React from 'react';
 import gql from 'graphql-tag';
 import { Query } from 'react-apollo';
+import { Button } from 'semantic-ui-react';
+import { withState } from 'recompose';
 
 import IssueList from './IssueList';
 import Loading from './Loading';
 import ErrorMessage from './ErrorMessage';
-import { Button } from 'semantic-ui-react';
 
 const ISSUE_STATES = {
   NONE: 'NONE',
@@ -28,9 +29,13 @@ const TRANSITION_STATE = {
 const isShow = issueState => issueState !== ISSUE_STATES.NONE;
 
 const GET_ISSUES_OF_REPOSITORY = gql`
-  query($repositoryOwner: String!, $repositoryName: String!) {
+  query(
+    $repositoryOwner: String!
+    $repositoryName: String!
+    $issueState: IssueState!
+  ) {
     repository(name: $repositoryName, owner: $repositoryOwner) {
-      issues(first: 5) {
+      issues(first: 5, states: [$issueState]) {
         edges {
           node {
             id
@@ -46,60 +51,43 @@ const GET_ISSUES_OF_REPOSITORY = gql`
   }
 `;
 
-class Issues extends React.Component {
-  state = {
-    issueState: ISSUE_STATES.NONE,
-  };
-
-  onChangeIssueState = nextIssueState => {
-    this.setState({
-      issueState: nextIssueState,
-    });
-  };
-
-  render() {
-    const { issueState } = this.state;
-    const { repositoryOwner, repositoryName } = this.props;
-
-    return (
-      <React.Fragment>
-        <Button
-          onClick={() =>
-            this.onChangeIssueState(TRANSITION_STATE[issueState])
+const Issues = ({
+  repositoryOwner,
+  repositoryName,
+  issueState,
+  onChangeIssueState,
+}) => (
+  <React.Fragment>
+    <Button
+      onClick={() => onChangeIssueState(TRANSITION_STATE[issueState])}
+    >
+      {TRANSITION_LABELS[issueState]}
+    </Button>
+    {isShow(issueState) && (
+      <Query
+        query={GET_ISSUES_OF_REPOSITORY}
+        variables={{ repositoryOwner, repositoryName, issueState }}
+      >
+        {({ data, loading, error }) => {
+          if (error) {
+            return <ErrorMessage error={error} />;
           }
-        >
-          {TRANSITION_LABELS[issueState]}
-        </Button>
-        {isShow(issueState) && (
-          <Query
-            query={GET_ISSUES_OF_REPOSITORY}
-            variables={{ repositoryOwner, repositoryName }}
-          >
-            {({ data, loading, error }) => {
-              if (error) {
-                return <ErrorMessage error={error} />;
-              }
-              const { repository } = data;
-              if (loading && !repository) {
-                return <Loading />;
-              }
-              const filteredRepository = {
-                issues: {
-                  edges: repository.issues.edges.filter(
-                    issue => issue.node.state === issueState
-                  ),
-                },
-              };
-              if (!filteredRepository.issues.edges.length) {
-                return <div>No issues...</div>;
-              }
-              return <IssueList issues={filteredRepository.issues} />;
-            }}
-          </Query>
-        )}
-      </React.Fragment>
-    );
-  }
-}
+          const { repository } = data;
+          if (loading && !repository) {
+            return <Loading />;
+          }
+          if (!repository.issues.edges.length) {
+            return <div>No issues...</div>;
+          }
+          return <IssueList issues={repository.issues} />;
+        }}
+      </Query>
+    )}
+  </React.Fragment>
+);
 
-export default Issues;
+export default withState(
+  'issueState',
+  'onChangeIssueState',
+  ISSUE_STATES.NONE
+)(Issues);
