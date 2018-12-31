@@ -1,12 +1,12 @@
 import React from 'react';
 import gql from 'graphql-tag';
 import { Query } from 'react-apollo';
-import { Button } from 'semantic-ui-react';
 import { withState } from 'recompose';
 
 import IssueList from './IssueList';
 import Loading from './Loading';
 import ErrorMessage from './ErrorMessage';
+import IssueFilter from './IssueFilter';
 
 const ISSUE_STATES = {
   NONE: 'NONE',
@@ -14,21 +14,21 @@ const ISSUE_STATES = {
   CLOSED: 'CLOSED',
 };
 
-const TRANSITION_LABELS = {
+export const TRANSITION_LABELS = {
   [ISSUE_STATES.NONE]: 'Show Open Issues',
   [ISSUE_STATES.OPEN]: 'Show Closed Issues',
   [ISSUE_STATES.CLOSED]: 'Hide Issues',
 };
 
-const TRANSITION_STATE = {
+export const TRANSITION_STATE = {
   [ISSUE_STATES.NONE]: ISSUE_STATES.OPEN,
   [ISSUE_STATES.OPEN]: ISSUE_STATES.CLOSED,
   [ISSUE_STATES.CLOSED]: ISSUE_STATES.NONE,
 };
 
-const isShow = issueState => issueState !== ISSUE_STATES.NONE;
+export const isShow = issueState => issueState !== ISSUE_STATES.NONE;
 
-const GET_ISSUES_OF_REPOSITORY = gql`
+export const GET_ISSUES_OF_REPOSITORY = gql`
   query(
     $repositoryOwner: String!
     $repositoryName: String!
@@ -58,11 +58,12 @@ const Issues = ({
   onChangeIssueState,
 }) => (
   <React.Fragment>
-    <Button
-      onClick={() => onChangeIssueState(TRANSITION_STATE[issueState])}
-    >
-      {TRANSITION_LABELS[issueState]}
-    </Button>
+    <IssueFilter
+      repositoryOwner={repositoryOwner}
+      repositoryName={repositoryName}
+      issueState={issueState}
+      onChangeIssueState={onChangeIssueState}
+    />
     {isShow(issueState) && (
       <Query
         query={GET_ISSUES_OF_REPOSITORY}
