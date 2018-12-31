@@ -3,6 +3,7 @@ import { Container, List } from 'semantic-ui-react';
 
 import FetchMore from './FetchMore';
 import RepositoryItem from './RepositoryItem';
+import Issues from './Issues';
 
 const getUpdateQuery = entry => (
   previousResult,
@@ -39,6 +40,10 @@ const RepositoryList = ({
       {repositories.edges.map(({ node }) => (
         <List.Item key={node.id}>
           <RepositoryItem {...node} />
+          <Issues
+            repositoryName={node.name}
+            repositoryOwner={node.owner.login}
+          />
         </List.Item>
       ))}
     </List>
