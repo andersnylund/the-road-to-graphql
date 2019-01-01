@@ -2,9 +2,6 @@ import uuidv4 from 'uuid/v4';
 
 export default {
   Query: {
-    users: (parent, args, { models }) => Object.values(models.users),
-    user: (parent, { id }, { models }) => models.users[id],
-    me: (parent, args, { me }) => me,
     messages: (parent, args, { models }) => Object.values(models.messages),
     message: (parent, { id }, { models }) => models.messages[id],
   },
@@ -35,13 +32,6 @@ export default {
       ].messageIds.filter(messageId => messageId !== id);
       return true;
     },
-  },
-
-  User: {
-    messages: (user, args, { models }) =>
-      Object.values(models.messages).filter(
-        message => message.userId === user.id
-      ),
   },
 
   Message: {
