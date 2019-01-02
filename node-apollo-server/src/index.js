@@ -31,10 +31,11 @@ const server = new ApolloServer({
       message,
     };
   },
-  context: {
+  context: async () => ({
     models,
-    me: models.User.findByLogin('andersnylund'),
-  },
+    me: await models.User.findByLogin('andersnylund'),
+    secret: process.env.SECRET,
+  }),
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
@@ -43,6 +44,8 @@ const createUsersWithMessages = async () => {
   await models.User.create(
     {
       username: 'andersnylund',
+      email: 'anders.nylund@example.com',
+      password: 'andersnylund',
       messages: [
         {
           text: 'blah blah',
@@ -55,6 +58,8 @@ const createUsersWithMessages = async () => {
   await models.User.create(
     {
       username: 'jdoe',
+      email: 'john.doe@example.com',
+      password: 'johndoe',
       messages: [
         {
           text: 'Happy to release...',
