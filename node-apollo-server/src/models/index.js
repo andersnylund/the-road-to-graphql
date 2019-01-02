@@ -9,6 +9,7 @@ const sequelize = new Sequelize(
   process.env.DATABASE_PASSWORD,
   {
     dialect: 'postgres',
+    operatorsAliases: false,
   }
 );
 

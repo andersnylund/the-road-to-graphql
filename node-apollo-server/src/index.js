@@ -2,10 +2,14 @@ import express from 'express';
 import helmet from 'helmet';
 import { ApolloServer } from 'apollo-server-express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
+
+dotenv.config();
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 const app = express();
 app.use(cors());
@@ -14,6 +18,19 @@ app.use(helmet());
 const server = new ApolloServer({
   typeDefs: schema,
   resolvers,
+  debug: isDevelopment,
+  formatError: error => {
+    // remove the internal sequelize error message
+    // leave only the important validation error
+    const message = error.message
+      .replace('SequelizeValidationError: ', '')
+      .replace('Validation error: ', '');
+
+    return {
+      ...error,
+      message,
+    };
+  },
   context: {
     models,
     me: models.User.findByLogin('andersnylund'),
@@ -21,8 +38,6 @@ const server = new ApolloServer({
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
-
-const eraseDatabaseOnSync = true;
 
 const createUsersWithMessages = async () => {
   await models.User.create(
@@ -55,8 +70,8 @@ const createUsersWithMessages = async () => {
   );
 };
 
-sequelize.sync({ force: eraseDatabaseOnSync }).then(async () => {
-  if (eraseDatabaseOnSync) {
+sequelize.sync({ force: isDevelopment }).then(async () => {
+  if (isDevelopment) {
     createUsersWithMessages();
   }
 
