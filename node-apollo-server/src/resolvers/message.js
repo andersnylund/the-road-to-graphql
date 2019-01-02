@@ -1,40 +1,23 @@
-import uuidv4 from 'uuid/v4';
-
 export default {
   Query: {
-    messages: (parent, args, { models }) => Object.values(models.messages),
-    message: (parent, { id }, { models }) => models.messages[id],
+    messages: async (parent, args, { models }) => models.Message.findAll(),
+    message: async (parent, { id }, { models }) => models.Message.findById(id),
   },
 
   Mutation: {
-    createMessage: (parent, { text }, { me, models }) => {
-      const id = uuidv4();
-      const message = {
-        id,
+    createMessage: async (parent, { text }, { me, models }) =>
+      models.Message.create({
         text,
         userId: me.id,
-      };
+      }),
 
-      models.messages[id] = message;
-      models.users[me.id].messageIds.push(id);
-
-      return message;
-    },
-
-    deleteMessage: (parent, { id }, { models }) => {
-      const message = models.messages[id];
-      if (!message) {
-        return false;
-      }
-      delete models.messages[id];
-      models.users[message.userId].messageIds = models.users[
-        message.userId
-      ].messageIds.filter(messageId => messageId !== id);
-      return true;
+    deleteMessage: async (parent, { id }, { models }) => {
+      models.Message.destroy({ where: { id } });
     },
   },
 
   Message: {
-    user: (message, args, { models }) => models.users[message.userId],
+    user: async (message, args, { models }) =>
+      models.User.findById(message.userId),
   },
 };
