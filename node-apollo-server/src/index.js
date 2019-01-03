@@ -17,7 +17,7 @@ app.use(cors());
 app.use(helmet());
 
 const getMe = async req => {
-  const token = req.headers['x-token'];
+  const token = req.headers['bearer'];
 
   if (token) {
     try {
