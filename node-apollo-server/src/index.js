@@ -17,7 +17,7 @@ app.use(cors());
 app.use(helmet());
 
 const getMe = async req => {
-  const token = req.headers['bearer'];
+  const token = req.headers.bearer;
 
   if (token) {
     try {
@@ -56,7 +56,7 @@ const server = new ApolloServer({
 
 server.applyMiddleware({ app, path: '/graphql' });
 
-const createUsersWithMessages = async () => {
+const createUsersWithMessages = async date => {
   await models.User.create(
     {
       username: 'andersnylund',
@@ -66,6 +66,7 @@ const createUsersWithMessages = async () => {
       messages: [
         {
           text: 'blah blah',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
       ],
     },
@@ -80,9 +81,11 @@ const createUsersWithMessages = async () => {
       messages: [
         {
           text: 'Happy to release...',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
         {
           text: 'Published a complete...',
+          createdAt: date.setSeconds(date.getSeconds() + 1),
         },
       ],
     },
@@ -94,7 +97,7 @@ const createUsersWithMessages = async () => {
 
 sequelize.sync({ force: isDevelopment }).then(async () => {
   if (isDevelopment) {
-    createUsersWithMessages();
+    createUsersWithMessages(new Date());
   }
 
   app.listen({ port: 8000 }, () => {
