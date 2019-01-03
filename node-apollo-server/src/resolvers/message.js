@@ -3,6 +3,12 @@ import Sequelize from 'sequelize';
 import { combineResolvers } from 'graphql-resolvers';
 import { isAuthenticated, isMessageOwner } from './authorization';
 
+const toCursorHash = string =>
+  Buffer.from(JSON.stringify(string)).toString('base64');
+
+const fromCursorHash = string =>
+  JSON.parse(Buffer.from(string, 'base64').toString('utf-8'));
+
 export default {
   Query: {
     messages: async (parent, { cursor, limit = 100 }, { models }) => {
@@ -10,16 +16,28 @@ export default {
         ? {
             where: {
               createdAt: {
-                [Sequelize.Op.lt]: cursor,
+                [Sequelize.Op.lt]: fromCursorHash(cursor),
               },
             },
           }
         : {};
-      return models.Message.findAll({
+
+      const messages = await models.Message.findAll({
         order: [['createdAt', 'DESC']],
-        limit,
+        limit: limit + 1,
         ...cursorOptions,
       });
+
+      const hasNextPage = messages.length > limit;
+      const edges = hasNextPage ? messages.slice(0, -1) : messages;
+
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage,
+          endCursor: toCursorHash(edges[edges.length - 1].createdAt),
+        },
+      };
     },
 
     message: async (parent, { id }, { models }) => models.Message.findByPk(id),
