@@ -4,7 +4,7 @@
   "description": "Node and apollo server part of The road to GraphQL ",
   "main": "index.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=development nodemon --exec babel-node src/index.js",
+    "start": "cross-env NODE_ENV=development nodemon --signal SIGTERM --exec babel-node src/index.js",
     "test": "mocha --require @babel/register 'src/**/*.spec.js'"
   },
   "author": "Anders Nylund",

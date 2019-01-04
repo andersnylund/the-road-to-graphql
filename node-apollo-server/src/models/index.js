@@ -10,7 +10,6 @@ const sequelize = new Sequelize(
   {
     dialect: 'postgres',
     operatorsAliases: false,
-    logging: false,
   }
 );
 
