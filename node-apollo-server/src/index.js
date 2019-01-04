@@ -1,13 +1,16 @@
+import http from 'http';
 import express from 'express';
 import helmet from 'helmet';
 import { ApolloServer, AuthenticationError } from 'apollo-server-express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import DataLoader from 'dataloader';
 
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
+import loaders from './loaders';
 
 dotenv.config();
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -44,17 +47,30 @@ const server = new ApolloServer({
       message,
     };
   },
-  context: async ({ req }) => {
-    const me = await getMe(req);
-    return {
-      models,
-      me,
-      secret: process.env.SECRET,
-    };
+  context: async ({ req, connection }) => {
+    if (connection) {
+      return {
+        models,
+      };
+    }
+    if (req) {
+      const me = await getMe(req);
+      return {
+        models,
+        me,
+        secret: process.env.SECRET,
+        loaders: {
+          user: new DataLoader(keys => loaders.user.batchUsers(keys, models)),
+        },
+      };
+    }
   },
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
+
+const httpServer = http.createServer(app);
+server.installSubscriptionHandlers(httpServer);
 
 const createUsersWithMessages = async date => {
   await models.User.create(
@@ -100,7 +116,7 @@ sequelize.sync({ force: isDevelopment }).then(async () => {
     createUsersWithMessages(new Date());
   }
 
-  app.listen({ port: 8000 }, () => {
+  httpServer.listen({ port: 8000 }, () => {
     // eslint-disable-next-line no-console
     console.log('Apollo Server on http://localhost:8000/graphql');
   });
