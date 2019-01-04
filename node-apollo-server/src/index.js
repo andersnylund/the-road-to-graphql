@@ -5,10 +5,12 @@ import { ApolloServer, AuthenticationError } from 'apollo-server-express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import DataLoader from 'dataloader';
 
 import schema from './schema';
 import resolvers from './resolvers';
 import models, { sequelize } from './models';
+import loaders from './loaders';
 
 dotenv.config();
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -57,6 +59,9 @@ const server = new ApolloServer({
         models,
         me,
         secret: process.env.SECRET,
+        loaders: {
+          user: new DataLoader(keys => loaders.user.batchUsers(keys, models)),
+        },
       };
     }
   },
