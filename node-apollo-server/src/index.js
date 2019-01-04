@@ -1,3 +1,4 @@
+import http from 'http';
 import express from 'express';
 import helmet from 'helmet';
 import { ApolloServer, AuthenticationError } from 'apollo-server-express';
@@ -44,17 +45,27 @@ const server = new ApolloServer({
       message,
     };
   },
-  context: async ({ req }) => {
-    const me = await getMe(req);
-    return {
-      models,
-      me,
-      secret: process.env.SECRET,
-    };
+  context: async ({ req, connection }) => {
+    if (connection) {
+      return {
+        models,
+      };
+    }
+    if (req) {
+      const me = await getMe(req);
+      return {
+        models,
+        me,
+        secret: process.env.SECRET,
+      };
+    }
   },
 });
 
 server.applyMiddleware({ app, path: '/graphql' });
+
+const httpServer = http.createServer(app);
+server.installSubscriptionHandlers(httpServer);
 
 const createUsersWithMessages = async date => {
   await models.User.create(
@@ -100,7 +111,7 @@ sequelize.sync({ force: isDevelopment }).then(async () => {
     createUsersWithMessages(new Date());
   }
 
-  app.listen({ port: 8000 }, () => {
+  httpServer.listen({ port: 8000 }, () => {
     // eslint-disable-next-line no-console
     console.log('Apollo Server on http://localhost:8000/graphql');
   });
